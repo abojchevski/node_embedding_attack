@@ -14,7 +14,7 @@ import scipy.sparse as sp
 import scipy.linalg as spl
 import tensorflow as tf
 import networkx as nx
-from embedding_attacks.utils import *
+from node_embedding_attack.utils import *
 
 from joblib import Memory
 
