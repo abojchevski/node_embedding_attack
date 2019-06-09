@@ -1,7 +1,10 @@
 # Adversarial Attacks on Node Embeddings via Graph Poisoning
 
 Preliminary reference implementation of the attack proposed in the paper:
-"[Adversarial Attacks on Node Embeddings via Graph Poisoning](https://arxiv.org/abs/1809.01093)", Aleksandar Bojchevski and Stephan Günnemann, ICML 2019.
+
+"[Adversarial Attacks on Node Embeddings via Graph Poisoning](https://arxiv.org/abs/1809.01093)",
+
+Aleksandar Bojchevski and Stephan Günnemann, ICML 2019.
 
 ## Requirements
 * gensim
