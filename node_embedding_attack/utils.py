@@ -11,9 +11,10 @@ Copyright (C) owned by the authors, 2019
 import warnings
 
 import numpy as np
+import numba
 import scipy.sparse as sp
 
-from sklearn.linear_model import LogisticRegressionCV
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import normalize
 from sklearn.metrics import f1_score, roc_auc_score, average_precision_score
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -38,7 +39,8 @@ def flip_candidates(adj_matrix, candidates):
     return adj_matrix_flipped
 
 
-def sum_of_powers(x, pow):
+@numba.jit(nopython=True)
+def sum_of_powers(x, power):
     """For each x_i, computes \sum_{r=1}^{pow) x_i^r (elementwise sum of powers).
 
     :param x: shape [?]
@@ -48,7 +50,12 @@ def sum_of_powers(x, pow):
     :return: shape [?]
         Vector where each element is the sum of powers from 1 to pow.
     """
-    return np.sum([np.power(x, i) for i in range(1, pow + 1)], 0)
+    n = x.shape[0]
+    sum_powers = np.zeros((power, n))
+    for i, i_power in enumerate(range(1, power + 1)):
+        sum_powers[i] = np.power(x, i_power)
+
+    return sum_powers.sum(0)
 
 
 def generate_candidates_removal_minimum_spanning_tree(adj_matrix):
@@ -196,14 +203,14 @@ def evaluate_embedding_node_classification(embedding_matrix, labels, train_ratio
         features_train = embedding_matrix[split_train]
         features_test = embedding_matrix[split_test]
         labels_train = labels[split_train]
-        labels = labels[split_test]
+        labels_test = labels[split_test]
 
-        lr = LogisticRegressionCV()
+        lr = LogisticRegression(solver='lbfgs', max_iter=1000, multi_class='auto')
         lr.fit(features_train, labels_train)
 
         lr_z_predict = lr.predict(features_test)
-        f1_micro = f1_score(labels, lr_z_predict, average='micro')
-        f1_macro = f1_score(labels, lr_z_predict, average='macro')
+        f1_micro = f1_score(labels_test, lr_z_predict, average='micro')
+        f1_macro = f1_score(labels_test, lr_z_predict, average='macro')
 
         results.append([f1_micro, f1_macro])
 
@@ -253,20 +260,16 @@ def load_dataset(file_name):
     """
     if not file_name.endswith('.npz'):
         file_name += '.npz'
-    with np.load(file_name) as loader:
+    with np.load(file_name, allow_pickle=True) as loader:
         loader = dict(loader)
-        A = sp.csr_matrix((loader['adj_data'], loader['adj_indices'],
+        adj_matrix = sp.csr_matrix((loader['adj_data'], loader['adj_indices'],
                            loader['adj_indptr']), shape=loader['adj_shape'])
 
-        X = sp.csr_matrix((loader['attr_data'], loader['attr_indices'],
-                           loader['attr_indptr']), shape=loader['attr_shape'])
-
-        z = loader.get('labels')
+        labels = loader.get('labels')
 
         graph = {
-            'A': A,
-            'X': X,
-            'z': z
+            'adj_matrix': adj_matrix,
+            'labels': labels
         }
 
         idx_to_node = loader.get('idx_to_node')
@@ -532,3 +535,32 @@ def edge_cover(adj_matrix):
     assert len(np.unique(edges)) == n_nodes
 
     return edges
+
+
+def standardize(adj_matrix, labels):
+    """
+    Make the graph undirected and select only the nodes
+     belonging to the largest connected component.
+
+    :param adj_matrix: sp.spmatrix
+        Sparse adjacency matrix
+    :param labels: array-like, shape [n]
+
+    :return:
+        standardized_adj_matrix: sp.spmatrix
+            Standardized sparse adjacency matrix.
+        standardized_labels: array-like, shape [?]
+            Labels for the selected nodes.
+    """
+    # make the graph undirected
+    adj_matrix = adj_matrix.maximum(adj_matrix.T)
+
+    # select the largest connected component
+    _, components = sp.csgraph.connected_components(adj_matrix)
+    c_ids, c_counts = np.unique(components, return_counts=True)
+    id_max_component = c_ids[c_counts.argmax()]
+    select = components == id_max_component
+    standardized_adj_matrix = adj_matrix[select][:, select]
+    standardized_labels = labels[select]
+
+    return standardized_adj_matrix, standardized_labels
