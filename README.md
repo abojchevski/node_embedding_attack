@@ -11,9 +11,8 @@ Aleksandar Bojchevski and Stephan Günnemann, ICML 2019.
 * tensorflow
 * sklearn (only for evaluation)
 
-## Demo
-Notebook example.ipynb coming soon!
-
+## Example
+The notebook example.ipynb shows an example of our general attack and comparison with the baselines.
 
 ## Cite
 Please cite our paper if you use this code in your own work:
