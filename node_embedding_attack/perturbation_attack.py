@@ -48,6 +48,7 @@ def estimate_loss_with_delta_eigenvals(candidates, flip_indicator, vals_org, vec
         i, j = candidates[x]
         vals_est = vals_org + flip_indicator[x] * (
                 2 * vecs_org[i] * vecs_org[j] - vals_org * (vecs_org[i] ** 2 + vecs_org[j] ** 2))
+
         vals_sum_powers = sum_of_powers(vals_est, window_size)
 
         loss_ij = np.sqrt(np.sum(np.sort(vals_sum_powers ** 2)[:n_nodes - dim]))
@@ -325,10 +326,10 @@ def add_by_remove(adj_matrix, candidates, n_flips, dim, window_size, c_rnd, seed
     vals_org_add, vecs_org_add = spl.eigh(adj_matrix_add.toarray(), np.diag(adj_matrix_add.sum(1).A1))
     flip_indicator = 1 - 2 * adj_matrix_add[candidates[:, 0], candidates[:, 1]].A1
 
-    loss_est = estimate_loss_with_delta_eigenvals(candidates, flip_indicator,
+    loss_est = estimate_loss_with_delta_eigenvals(candidates_add, flip_indicator,
                                                   vals_org_add, vecs_org_add, n_nodes, dim, window_size)
 
-    loss_argsort = loss_est().argsort()
+    loss_argsort = loss_est.argsort()
 
     top_candidates = candidates_add[loss_argsort[:n_flips]]
 
