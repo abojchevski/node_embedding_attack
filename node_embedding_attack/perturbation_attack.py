@@ -21,6 +21,35 @@ from joblib import Memory
 mem = Memory(cachedir='/tmp/joblib')
 
 
+def perturbation_top_flips(adj_matrix, candidates, n_flips, dim, window_size):
+    """Selects the top (n_flips) number of flips using our perturbation attack.
+
+    :param adj_matrix: sp.spmatrix
+        The graph represented as a sparse scipy matrix
+    :param candidates: np.ndarray, shape [?, 2]
+        Candidate set of edge flips
+    :param n_flips: int
+        Number of flips to select
+    :param dim: int
+        Dimensionality of the embeddings.
+    :param window_size: int
+        Co-occurence window size.
+    :return: np.ndarray, shape [?, 2]
+        The top edge flips from the candidate set
+    """
+    n_nodes = adj_matrix.shape[0]
+    # vector indicating whether we are adding an edge (+1) or removing an edge (-1)
+    delta_w = 1 - 2 * adj_matrix[candidates[:, 0], candidates[:, 1]].A1
+
+    # generalized eigenvalues/eigenvectors
+    deg_matrix = np.diag(adj_matrix.sum(1).A1)
+    vals_org, vecs_org = spl.eigh(adj_matrix.toarray(), deg_matrix)
+
+    loss_for_candidates = estimate_loss_with_delta_eigenvals(candidates, delta_w, vals_org, vecs_org, n_nodes, dim, window_size)
+    top_flips = candidates[loss_for_candidates.argsort()[-n_flips:]]
+
+    return top_flips
+
 @numba.jit(nopython=True)
 def estimate_loss_with_delta_eigenvals(candidates, flip_indicator, vals_org, vecs_org, n_nodes, dim, window_size):
     """Computes the estimated loss using the change in the eigenvalues for every candidate edge flip.
