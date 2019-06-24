@@ -1,5 +1,9 @@
 # Adversarial Attacks on Node Embeddings via Graph Poisoning
 
+<p align="center">
+<img src="https://www.kdd.in.tum.de/fileadmin/w00bxq/www/node_attack/node_attack.png">
+</p>
+
 Preliminary reference implementation of the attack proposed in the paper:
 
 "[Adversarial Attacks on Node Embeddings via Graph Poisoning](https://arxiv.org/abs/1809.01093)",
