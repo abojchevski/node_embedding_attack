@@ -1,4 +1,4 @@
-# Adversarial Attacks on Node Embeddings via Graph Poisoning
+## Adversarial Attacks on Node Embeddings via Graph Poisoning
 
 <p align="center">
 <img src="https://www.kdd.in.tum.de/fileadmin/w00bxq/www/node_attack/node_attack.png">
