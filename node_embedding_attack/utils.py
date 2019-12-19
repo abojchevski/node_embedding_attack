@@ -563,4 +563,10 @@ def standardize(adj_matrix, labels):
     standardized_adj_matrix = adj_matrix[select][:, select]
     standardized_labels = labels[select]
 
+    # remove self-loops
+    standardized_adj_matrix = standardized_adj_matrix.tolil()
+    standardized_adj_matrix.setdiag(0)
+    standardized_adj_matrix = standardized_adj_matrix.tocsr()
+    standardized_adj_matrix.eliminate_zeros()
+
     return standardized_adj_matrix, standardized_labels
