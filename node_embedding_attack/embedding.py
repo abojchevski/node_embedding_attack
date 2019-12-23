@@ -120,7 +120,7 @@ def sample_random_walks(adj_matrix, walk_length, walks_per_node, seed=None):
     return random_walks
 
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit(nopython=True)
 def _random_walk(indptr, indices, walk_length, walks_per_node, seed):
     """Sample r random walks of length l per node in parallel from the graph.
 
