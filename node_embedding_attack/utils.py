@@ -263,7 +263,7 @@ def load_dataset(file_name):
     with np.load(file_name, allow_pickle=True) as loader:
         loader = dict(loader)
         adj_matrix = sp.csr_matrix((loader['adj_data'], loader['adj_indices'],
-                           loader['adj_indptr']), shape=loader['adj_shape'])
+                                    loader['adj_indptr']), shape=loader['adj_shape'])
 
         labels = loader.get('labels')
 
@@ -430,7 +430,8 @@ def train_val_test_split_adjacency(adj_matrix, p_val=0.10, p_test=0.05, seed=0, 
         # discard ones
         random_sample = random_sample[adj_matrix[random_sample[:, 0], random_sample[:, 1]].A1 == 0]
         # discard duplicates
-        random_sample = random_sample[np.unique(random_sample[:, 0] * n_nodes + random_sample[:, 1], return_index=True)[1]]
+        random_sample = random_sample[
+            np.unique(random_sample[:, 0] * n_nodes + random_sample[:, 1], return_index=True)[1]]
         # only take as much as needed
         test_zeros = np.row_stack(random_sample)[:n_test]
         assert test_zeros.shape[0] == n_test
@@ -552,15 +553,21 @@ def standardize(adj_matrix, labels):
         standardized_labels: array-like, shape [?]
             Labels for the selected nodes.
     """
+    # copy the input
+    standardized_adj_matrix = adj_matrix.copy()
+
+    # make the graph unweighted
+    standardized_adj_matrix[standardized_adj_matrix != 0] = 1
+
     # make the graph undirected
-    adj_matrix = adj_matrix.maximum(adj_matrix.T)
+    standardized_adj_matrix = standardized_adj_matrix.maximum(standardized_adj_matrix.T)
 
     # select the largest connected component
-    _, components = sp.csgraph.connected_components(adj_matrix)
+    _, components = sp.csgraph.connected_components(standardized_adj_matrix)
     c_ids, c_counts = np.unique(components, return_counts=True)
     id_max_component = c_ids[c_counts.argmax()]
     select = components == id_max_component
-    standardized_adj_matrix = adj_matrix[select][:, select]
+    standardized_adj_matrix = standardized_adj_matrix[select][:, select]
     standardized_labels = labels[select]
 
     # remove self-loops
